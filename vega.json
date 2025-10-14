@@ -1,0 +1,138 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "title": "Claim Progress Visualization",
+  "data": [
+    {
+      "name": "icn_numbers",
+      "url": {
+        "%context%": true,
+        "index": "test_index",
+        "body": {
+          "size": 0,
+          "aggs": {
+            "unique_icn": {
+              "terms": {
+                "field": "icn_number.keyword",
+                "size": 100
+              }
+            }
+          }
+        }
+      },
+      "format": {
+        "property": "aggregations.unique_icn.buckets"
+      },
+      "transform": [
+        {
+          "type": "map",
+          "as": "icn_number",
+          "expr": "datum.key"
+        }
+      ]
+    },
+    {
+      "name": "claim_events",
+      "url": {
+        "%context%": true,
+        "index": "test_index",
+        "body": {
+          "size": 100,
+          "query": {
+            "bool": {
+              "filter": [
+                { "term": { "icn_number.keyword": "{{icn_number}}" } }
+              ]
+            }
+          }
+        }
+      },
+      "format": { "property": "hits.hits" },
+      "transform": [
+        { "type": "project", "fields": ["_source.event_action"], "as": ["event_action"] }
+      ]
+    },
+    {
+      "name": "progress_rows",
+      "values": [
+        { "event_action": "claim received", "order": 1 },
+        { "event_action": "claim loaded to db", "order": 2 },
+        { "event_action": "dupe claim event published", "order": 3 }
+      ]
+    },
+    {
+      "name": "progress_status",
+      "source": "progress_rows",
+      "transform": [
+        {
+          "type": "lookup",
+          "from": "claim_events",
+          "key": "event_action",
+          "fields": ["event_action"],
+          "as": ["match"]
+        },
+        {
+          "type": "formula",
+          "as": "status",
+          "expr": "datum.match != null ? 'completed' : 'pending'"
+        }
+      ]
+    }
+  ],
+  "signals": [
+    {
+      "name": "icn_number",
+      "value": "",
+      "bind": {
+        "input": "select",
+        "options": {"signal": "icn_numbers.icn_number"},
+        "name": "Select ICN Number"
+      }
+    }
+  ],
+  "marks": [
+    {
+      "type": "group",
+      "from": { "data": "progress_status" },
+      "marks": [
+        {
+          "type": "rect",
+          "encode": {
+            "enter": {
+              "x": { "value": 0 },
+              "y": { "field": "order", "mult": 40 },
+              "width": { "value": 300 },
+              "height": { "value": 30 },
+              "fill": [
+                {
+                  "test": "datum.status == 'completed'",
+                  "value": "#3cb371"  // Green
+                },
+                {
+                  "test": "datum.status == 'pending'",
+                  "value": "#d3d3d3"  // Grey
+                }
+              ],
+              "stroke": { "value": "#000" }
+            }
+          }
+        },
+        {
+          "type": "text",
+          "encode": {
+            "enter": {
+              "x": { "value": 10 },
+              "y": { "field": "order", "mult": 40, "offset": 20 },
+              "text": { "field": "event_action" },
+              "fill": { "value": "#000" },
+              "fontSize": { "value": 16 },
+              "align": { "value": "left" }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "width": 320,
+  "height": 140,
+  "padding": 10
+}
