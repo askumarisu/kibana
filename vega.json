@@ -5,7 +5,6 @@
     {
       "name": "icn_numbers",
       "url": {
-        "%context%": true,
         "index": "test_index",
         "body": {
           "size": 0,
@@ -21,19 +20,11 @@
       },
       "format": {
         "property": "aggregations.unique_icn.buckets"
-      },
-      "transform": [
-        {
-          "type": "map",
-          "as": "icn_number",
-          "expr": "datum.key"
-        }
-      ]
+      }
     },
     {
       "name": "claim_events",
       "url": {
-        "%context%": true,
         "index": "test_index",
         "body": {
           "size": 100,
@@ -84,7 +75,10 @@
       "value": "",
       "bind": {
         "input": "select",
-        "options": {"signal": "icn_numbers.icn_number"},
+        "options": {
+          "signal": "icn_numbers",
+          "field": "key"
+        },
         "name": "Select ICN Number"
       }
     }
@@ -105,11 +99,11 @@
               "fill": [
                 {
                   "test": "datum.status == 'completed'",
-                  "value": "#3cb371"  // Green
+                  "value": "#3cb371"
                 },
                 {
                   "test": "datum.status == 'pending'",
-                  "value": "#d3d3d3"  // Grey
+                  "value": "#d3d3d3"
                 }
               ],
               "stroke": { "value": "#000" }
