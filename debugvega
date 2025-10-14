@@ -1,0 +1,42 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "title": "Debug Claim Events",
+  "data": [
+    {
+      "name": "claim_events",
+      "url": {
+        "index": "test_index",
+        "body": {
+          "size": 100,
+          "query": {
+            "bool": {
+              "filter": [
+                { "term": { "icn_number": "12345" } }
+              ]
+            }
+          }
+        }
+      },
+      "format": { "property": "hits.hits" },
+      "transform": [
+        { "type": "project", "fields": ["_source.event_action"], "as": ["event_action"] }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "type": "text",
+      "from": {"data": "claim_events"},
+      "encode": {
+        "enter": {
+          "x": {"value": 20},
+          "y": {"field": "event_action", "band": 1},
+          "text": {"field": "event_action"},
+          "fontSize": {"value": 18}
+        }
+      }
+    }
+  ],
+  "width": 400,
+  "height": 200
+}
