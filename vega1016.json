@@ -1,0 +1,83 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "title": "Claim Progress Blocks",
+  "data": [
+    {
+      "name": "claim_events",
+      "url": {
+        "index": "test_index",
+        "body": {
+          "size": 100,
+          "query": {
+            "bool": {
+              "filter": [
+                { "term": { "icn_number": "12345" } }
+              ]
+            }
+          }
+        }
+      },
+      "format": { "property": "hits.hits" },
+      "transform": [
+        { "type": "project", "fields": ["_source.event_action"], "as": ["event_action"] }
+      ]
+    },
+    {
+      "name": "blocks",
+      "values": [
+        { "block": "block1", "event_action": "claim received", "order": 1 },
+        { "block": "block2", "event_action": "claim loaded to db", "order": 2 },
+        { "block": "block3", "event_action": "dupe claim event published", "order": 3 }
+      ]
+    },
+    {
+      "name": "block_status",
+      "source": "blocks",
+      "transform": [
+        {
+          "type": "lookup",
+          "from": "claim_events",
+          "key": "event_action",
+          "fields": ["event_action"],
+          "as": ["match"]
+        },
+        {
+          "type": "formula",
+          "as": "color",
+          "expr": "datum.match != null ? '#3cb371' : '#d3d3d3'"
+        }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "type": "rect",
+      "from": { "data": "block_status" },
+      "encode": {
+        "enter": {
+          "x": { "value": 20 },
+          "y": { "field": "order", "mult": 50 },
+          "width": { "value": 250 },
+          "height": { "value": 40 },
+          "fill": { "field": "color" },
+          "stroke": { "value": "#333" }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "from": { "data": "block_status" },
+      "encode": {
+        "enter": {
+          "x": { "value": 35 },
+          "y": { "field": "order", "mult": 50, "offset": 25 },
+          "text": { "field": "block" },
+          "fill": { "value": "#000" },
+          "fontSize": { "value": 18 }
+        }
+      }
+    }
+  ],
+  "width": 300,
+  "height": 180
+}
