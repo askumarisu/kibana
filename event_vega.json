@@ -1,0 +1,50 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "title": "Log Event Actions",
+  "data": [
+    {
+      "name": "claim_events",
+      "url": {
+        "index": "test_index",
+        "body": {
+          "size": 100,
+          "query": {
+            "bool": {
+              "filter": [
+                { "term": { "icn_number": "12345" } }
+              ]
+            }
+          }
+        }
+      },
+      "format": { "property": "hits.hits" },
+      "transform": [
+        { "type": "project", "fields": ["_source.event_action"], "as": ["event_action"] }
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "name": "yscale",
+      "type": "band",
+      "domain": { "data": "claim_events", "field": "event_action" },
+      "range": [0, 400]
+    }
+  ],
+  "marks": [
+    {
+      "type": "text",
+      "from": { "data": "claim_events" },
+      "encode": {
+        "enter": {
+          "x": { "value": 20 },
+          "y": { "scale": "yscale", "field": "event_action" },
+          "text": { "field": "event_action" },
+          "fontSize": { "value": 14 }
+        }
+      }
+    }
+  ],
+  "width": 400,
+  "height": 400
+}
